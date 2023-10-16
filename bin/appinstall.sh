@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 APP_NAME=''
+APP_PORT=''
+APP_URL=''
 DOMAIN=''
 EPACE='        '
 TITLE=''
@@ -35,6 +37,10 @@ app_download(){
     bash bin/webadmin.sh -r
 }
 
+app_client_install() {
+    docker compose exec litespeed su -c "clientappinstallctl.sh -install_app ${1} ${2} ${3}"
+}
+
 main(){
   if [ "${APP_NAME}" = 'wordpress' ] || [ "${APP_NAME}" = 'wp' ]; then
     app_download ${APP_NAME} ${DOMAIN} ${TITLE} ${USERNAME} ${PASSWORD} ${EMAIL}
@@ -57,6 +63,9 @@ main(){
   fi
   if [ "${APP_NAME}" = 'empty' ] || [ "${APP_NAME}" = 'mt' ]; then
     app_download ${APP_NAME} ${DOMAIN}
+  fi
+  if [ "${APP_NAME}" = 'client-app' ]; then
+    app_client_install ${APP_NAME} ${APP_URL} ${APP_PORT}
   fi
   exit 0
 }
@@ -90,6 +99,14 @@ while [ ! -z "${1}" ]; do
         -[eE] | -email | --email) shift
             check_input "${1}"
             EMAIL="${1}"
+            ;;
+        -app_port | --app_port) shift
+            check_input "${1}"
+            APP_PORT="${1}"
+            ;;
+        -app_url | --app_url) shift
+            check_input "${1}"
+            APP_URL="${1}"
             ;;
         *) 
             help_message

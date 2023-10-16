@@ -12,6 +12,7 @@ DB_HOST='mysql'
 PLUGINLIST="litespeed-cache.zip"
 THEME='twentytwenty'
 EPACE='        '
+CLIENT_APP_INSTALLATION_URL=''
 
 echow(){
     FLAG=${1}
@@ -618,6 +619,8 @@ set_vh_docroot_empty_website(){
   	if [ "${VHNAME}" != '' ]; then
   	    VH_ROOT="${DEFAULT_VH_ROOT}/${VHNAME}"
   	    VH_DOC_ROOT="${DEFAULT_VH_ROOT}/${VHNAME}/html"
+				echo $VH_ROOT
+				echo $VH_DOC_ROOT
   	elif [ -d ${DEFAULT_VH_ROOT}/${1}/html ]; then
   	    VH_ROOT="${DEFAULT_VH_ROOT}/${1}"
           VH_DOC_ROOT="${DEFAULT_VH_ROOT}/${1}/html"
@@ -635,27 +638,73 @@ install_empty_website(){
 }
 
 
+install_client_app(){
+
+	installation_url="$1"
+	install_script_location="$2"
+	installation_file="/tmp/installation_file.tgz"
+
+	curl -o "$installation_file" "$installation_url"
+
+  if [ -e "$installation_file" ]; then
+
+		file_type=$(file -b "$installation_file")
+
+		if [[ $file_type == *"gzip compressed data"* ]]; then
+			
+			echo ${VH_DOC_ROOT}/installation_file.tgz
+
+			cp $installation_file $VH_DOC_ROOT && 
+			cd  ${VH_DOC_ROOT}
+				tar xzf ${VH_DOC_ROOT}/installation_file.tgz --strip-components=1
+
+			if [ -e "$install_script_location" ]; then
+  			chmod +x install_script_location
+				$install_script_location
+			fi
+
+		else
+			echo "$installation_url is not tgz format."
+		fi
+			
+		rm $installation_file
+		rm ${VH_DOC_ROOT}/installation_file.tgz
+		
+	else
+		echo "Can't download installation file $installation_url."
+		exit 1
+	fi
+}
+
+
 main(){
 	if [ "${APP_NAME}" = 'wordpress' ] || [ "${APP_NAME}" = 'wp' ]; then
-    set_vh_docroot ${DOMAIN}
-    get_owner
-    cd ${VH_DOC_ROOT}
-		check_sql_native
-		app_wordpress_dl
-		preinstall_wordpress
-		install_wp_plugin
-		set_htaccess
-		get_theme_name
-		set_lscache
+		set_vh_docroot ${DOMAIN}
+		get_owner
+		cd ${VH_DOC_ROOT}
+			check_sql_native
+			app_wordpress_dl
+			preinstall_wordpress
+			install_wp_plugin
+			set_htaccess
+			get_theme_name
+			set_lscache
+			change_owner
+			exit 0
+	elif [ "${APP_NAME}" = 'empty' ] || [ "${APP_NAME}" = 'mt' ]; then
+		set_vh_docroot_empty_website ${DOMAIN}
+		install_empty_website
+		get_owner
+		cd ${VH_DOC_ROOT}
 		change_owner
 		exit 0
-	elif [ "${APP_NAME}" = 'empty' ] || [ "${APP_NAME}" = 'mt' ]; then
-    set_vh_docroot_empty_website ${DOMAIN}
-    install_empty_website
-    get_owner
-    cd ${VH_DOC_ROOT}
-    change_owner
-    exit 0
+	elif [ "${APP_NAME}" = 'client-app' ]; then
+		set_vh_docroot_empty_website ${APP_NAME}
+		install_client_app $CLIENT_APP_INSTALLATION_URL
+		get_owner
+		cd ${VH_DOC_ROOT}
+		change_owner
+		exit 0
 	else
 		echo "APP: ${APP_NAME} not support, exit!"
 		exit 1	
@@ -678,7 +727,10 @@ while [ ! -z "${1}" ]; do
 			;;
 		-vhname | --vhname) shift
 			VHNAME="${1}"
-			;;	       
+			;;	
+		-client-app-install-url | --client-app-install-url) shift
+			CLIENT_APP_INSTALLATION_URL="${1}"
+		;;       
 		*) 
 			help_message
 			;;              
