@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 CONT_NAME='litespeed'
 EPACE='        '
 

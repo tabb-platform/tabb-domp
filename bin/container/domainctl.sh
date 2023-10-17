@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 CK_RESULT=''
 LSDIR='/usr/local/lsws'
 LS_HTTPD_CONF="${LSDIR}/conf/httpd_config.xml"
