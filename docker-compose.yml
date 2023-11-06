@@ -20,7 +20,7 @@ services:
     networks:
       - default
   litespeed:
-    image: tabbsh/lomp-1.8.1-test
+    image: tabbsh/lomp:1.7.3-test
     container_name: litespeed
     logging:
       driver: none
@@ -41,6 +41,7 @@ services:
       - 443:443
       - 443:443/udp
       - 7080:7080
+      - 32105:32105
     restart: always
     environment:
       TZ: ${TimeZone}

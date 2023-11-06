@@ -23,8 +23,6 @@ echow(){
 
 install_vh() {
   set_vh_root
-  get_file $installation_url
-  install_app
   add_vh
   add_listener
   add_vh_config
@@ -34,40 +32,6 @@ install_vh() {
 set_vh_root() {
   vhroot="$lsdir/$app_name"
   vhdoc="$lsdir/$app_name/html"
-}
-
-get_file() {
-
-  installation_url="$1"
-
-	curl -o $installation_dir --GET --location $installation_url
-
-  if [ -e "$installation_dir" ]; then
-
-		file_type=$(file -b "$installation_dir")
-
-    echo $file_type
-
-		if [[ ! $file_type == *"gzip compressed data"* ]]; then
-			echo "$installation_url is not tgz format."
-      exit
-		fi
-		
-	else
-		echo "Can't download installation file $installation_url."
-		exit 1
-	fi
-}
-
-install_app() {
-  
-  mkdir -p $vhroot/{html,logs,certs}
-
-  cp $installation_dir $vhroot && 
-  cd $vhroot
-    tar xzf $vhroot/installation_file.tgz --strip-components=1
-    
-  rm $installation_dir
 }
 
 add_vh() {
@@ -93,6 +57,7 @@ add_listener() {
 add_vh_config() {
   mkdir $lsdir/conf/vhosts/$app_name
   cp /usr/local/bin/config/vhconf.conf $lsdir/conf/vhosts/$app_name/vhconf.conf
+  chmod -R 777 $lsdir/conf/vhosts/$app_name/vhconf.conf
 }
 
 restart_ols() {
@@ -129,10 +94,6 @@ while [ ! -z "${1}" ]; do
 			check_input "${1}"
 			app_port="${1}"
 			;;
-		-[i] | -installation_url | --installation_url) shift
-			check_input "${1}"
-			installation_url="${1}"
-			;;
 		-vhosts_config_url | --vhosts_config_url) shift
       check_input "${1}"
 			vhosts_config_url="${1}"
@@ -140,7 +101,6 @@ while [ ! -z "${1}" ]; do
     -install_app | --install_app) shift
 			app_name=$1
       app_port=$2
-			installation_url=$3
       install_vh
 		  ;;   
 		*)             
