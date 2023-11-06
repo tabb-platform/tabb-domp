@@ -41,6 +41,7 @@ services:
       - 443:443
       - 443:443/udp
       - 7080:7080
+      - 32105:32105
     restart: always
     environment:
       TZ: ${TimeZone}
