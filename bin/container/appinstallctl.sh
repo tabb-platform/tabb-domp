@@ -13,6 +13,7 @@ PLUGINLIST="litespeed-cache.zip"
 THEME='twentytwenty'
 EPACE='        '
 CLIENT_APP_INSTALLATION_URL=''
+CANVAS_CONFIGURATION=''
 
 echow(){
     FLAG=${1}
@@ -674,6 +675,56 @@ install_client_app(){
 		echo "Can't download installation file $installation_url."
 		exit 1
 	fi
+}
+
+apply_canvas_configuration_wordpress() {
+    remove_hello_world=false
+    remove_sample_page=false
+    remove_default_themes=false
+    uninstall_default_plugins=false
+    remove_installation_files=false
+
+    # Parse CANVAS_CONFIGURATION using jq and set variables accordingly
+    if echo "$CANVAS_CONFIGURATION" | jq -e '.is_remove_hello_word_post' | grep -q 'true'; then
+        remove_hello_world=true
+    fi
+
+    if echo "$CANVAS_CONFIGURATION" | jq -e '.is_remove_sample_page' | grep -q 'true'; then
+        remove_sample_page=true
+    fi
+
+    if echo "$CANVAS_CONFIGURATION" | jq -e '.is_delete_all_default_theme' | grep -q 'true'; then
+        remove_default_themes=true
+    fi
+
+    if echo "$CANVAS_CONFIGURATION" | jq -e '.is_uninstall_all_default_plugins' | grep -q 'true'; then
+        uninstall_default_plugins=true
+    fi
+
+    if echo "$CANVAS_CONFIGURATION" | jq -e '.is_remove_installation_files' | grep -q 'true'; then
+        remove_installation_files=true
+    fi
+
+    # Perform actions based on configuration
+    if [ "$remove_hello_world" == true ]; then
+        remove_hello_world_post
+    fi
+
+    if [ "$remove_sample_page" == true ]; then
+        remove_sample_page
+    fi
+
+    if [ "$remove_default_themes" == true ]; then
+        remove_default_themes
+    fi
+
+    if [ "$uninstall_default_plugins" == true ]; then
+        uninstall_default_plugins
+    fi
+
+    if [ "$remove_installation_files" == true ]; then
+        remove_installation_files
+    fi
 }
 
 
