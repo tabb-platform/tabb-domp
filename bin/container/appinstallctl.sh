@@ -727,6 +727,226 @@ apply_canvas_configuration_wordpress() {
     fi
 }
 
+remove_hello_world_post() {
+    echo 'Removing "Hello World" post...'
+    wp post delete 1 --force --allow-root
+    echo 'Hello World post removed.'
+}
+
+remove_sample_page() {
+    echo 'Removing "Sample Page"...'
+    wp post delete $(wp post list --post_type=page --posts_per_page=1 --field=ID --format=ids) --force --allow-root
+    echo 'Sample Page removed.'
+}
+
+delete_default_themes() {
+    echo 'Deleting all default themes...'
+    wp theme delete twentytwenty --allow-root
+    wp theme delete twentytwentyone --allow-root
+    wp theme delete twentynineteen --allow-root
+    wp theme delete twentyseventeen --allow-root
+    echo 'All default themes removed.'
+}
+
+uninstall_default_plugins() {
+    echo 'Uninstalling all default plugins...'
+    wp plugin uninstall akismet --deactivate --allow-root
+    wp plugin uninstall hello --deactivate --allow-root
+    echo 'All default plugins uninstalled.'
+}
+
+remove_installation_files() {
+    echo 'Removing installation files...'
+    rm -f ${VH_DOC_ROOT}/wp-config-sample.php ${VH_DOC_ROOT}/readme.html
+    echo 'Installation files removed.'
+}
+
+
+set_predefined_settings() {
+	if [ -z "$CANVAS_CONFIGURATION" ]; then
+			return
+	fi
+	set_site_language
+	set_site_timezone
+	set_date_format
+}
+
+
+set_site_language() {
+	LANGUAGE_CODE=$(echo $CANVAS_CONFIGURATION | jq -e '.predefined_settings.site_language')
+	echo "Setting site language to: ${LANGUAGE_CODE}"
+	wp site switch-language ${LANGUAGE_CODE} --allow-root
+	echo "Site language set to: ${LANGUAGE_CODE}"
+}
+
+set_site_timezone() {
+	TIMEZONE=$(echo $CANVAS_CONFIGURATION | jq -e '.predefined_settings.time_zone')
+	echo "Setting site timezone to: ${TIMEZONE}"
+	wp option update timezone_string "${TIMEZONE}" --allow-root
+	echo "Site timezone set to: ${TIMEZONE}"
+}
+
+set_date_format() {
+	DATE_FORMAT=$(echo $CANVAS_CONFIGURATION | jq -e '.predefined_settings.date_format')
+	echo "Setting date format to: ${DATE_FORMAT}"
+	wp option update date_format "${DATE_FORMAT}" --allow-root
+	echo "Date format set to: ${DATE_FORMAT}"
+}
+
+set_permalink_structure() {
+	if [ -z "$CANVAS_CONFIGURATION" ]; then
+			return
+	fi
+	PERMALINK_STRUCTURE=$(echo $CANVAS_CONFIGURATION | jq -e '.predefined_settings.date_format')
+	echo "Setting permalink structure to: ${PERMALINK_STRUCTURE}"
+	wp option update permalink_structure "${PERMALINK_STRUCTURE}" --allow-root
+	echo "Permalink structure set to: ${PERMALINK_STRUCTURE}"
+}
+
+install_themes_from_canvas() {
+    if [ -z "$CANVAS_CONFIGURATION" ]; then
+        return
+    fi
+
+    if [ "$(echo "$CANVAS_CONFIGURATION" | jq -e '.themes | length > 0')" == true ]; then
+        THEMES_DATA=$(echo "$CANVAS_CONFIGURATION" | jq -c -r '.themes[]')
+
+        if [ -n "$THEMES_DATA" ]; then
+            for THEME in $THEMES_DATA; do
+                THEME_NAME=$(echo "$THEME" | jq -r '.name')
+                THEME_ACTIVE=$(echo "$THEME" | jq -r '.active')
+
+                echo "Installing WordPress theme: ${THEME_NAME}"
+
+                if [ "$THEME_ACTIVE" == "true" ]; then
+                    wp theme install "${THEME_NAME}" --allow-root --quiet --activate
+                else
+                    wp theme install "${THEME_NAME}" --allow-root --quiet
+                fi
+
+                if [ $? -eq 0 ]; then
+                    echo "WordPress theme ${THEME_NAME} installed successfully."
+                else
+                    echo "Failed to install WordPress theme ${THEME_NAME}."
+                fi
+            done
+        fi
+    fi
+}
+
+install_custom_themes_from_canvas() {
+    if [ -z "$CANVAS_CONFIGURATION" ]; then
+        return
+    fi
+
+    if [ "$(echo "$CANVAS_CONFIGURATION" | jq -e '.themes | length > 0')" == true ]; then
+        THEMES_DATA=$(echo "$CANVAS_CONFIGURATION" | jq -c -r '.custom_plugin_theme[] | select(.type == "theme")')
+
+        if [ -n "$THEMES_DATA" ]; then
+            for THEME in $THEMES_DATA; do
+                THEME_URL=$(echo $THEME | jq -r '.url')
+                THEME_NAME=$(basename "${THEME_URL}" .zip)
+                THEME_ACTIVE=$(echo $THEME | jq -r '.active')
+
+                if [ "$THEME_ACTIVE" == "true" ]; then
+                    wp theme install ${THEME_URL} --allow-root --quiet --activate
+                else
+                    wp theme install ${THEME_URL} --allow-root --quiet
+                fi
+
+                if [ $? -eq 0 ]; then
+                    echo "WordPress theme ${THEME_NAME} installed successfully."
+                else
+                    echo "Failed to install WordPress theme ${THEME_NAME}."
+                fi
+            done
+        fi
+    fi
+}
+
+
+install_wp_plugins_from_canvas() {
+	if [ -z "$CANVAS_CONFIGURATION" ]; then
+			return
+	fi
+
+	if [ $(echo "$CANVAS_CONFIGURATION" | jq -e '.plugins | length > 0') == true ]; then
+
+		PLUGIN_DATA=$(echo "$CANVAS_CONFIGURATION" | jq -c -r '.plugins[]')
+
+		if [ -n "$PLUGIN_DATA" ]; then
+
+			while IFS= read -r PLUGIN; do
+					PLUGIN_URL=$(echo "$PLUGIN" | jq -r '.url')
+					PLUGIN_NAME=$(basename "${PLUGIN_URL}" .zip)
+					PLUGIN_ACTIVE=$(echo "$PLUGIN" | jq -r '.active')
+
+					echo "Installing WordPress custom plugin: ${PLUGIN_NAME}"
+
+					wget -q -P ${VH_DOC_ROOT}/wp-content/plugins/ ${PLUGIN_URL}
+
+					if [ $? -eq 0 ]; then
+
+						ck_unzip
+						unzip -qq -o ${VH_DOC_ROOT}/wp-content/plugins/${PLUGIN_NAME}.zip -d ${VH_DOC_ROOT}/wp-content/plugins/
+
+						if [ "$PLUGIN_ACTIVE" == "true" ]; then
+								activate_wp_plugin "${PLUGIN_NAME}"
+						fi
+						
+						echo "WordPress custom plugin ${PLUGIN_NAME} installed."
+					else
+						echo "${PLUGIN_URL} FAILED to download"
+					fi
+
+			done <<< "$PLUGIN_DATA"
+		fi
+	fi
+
+	rm -f ${VH_DOC_ROOT}/wp-content/plugins/*.zip
+}
+
+
+install_wp_custom_plugins_from_canvas() {
+  if [ -z "$CANVAS_CONFIGURATION" ]; then
+			return
+	fi
+
+	if [ $(echo "$CANVAS_CONFIGURATION" | jq -e '.plugins | length > 0') == true ]; then
+
+		PLUGIN_DATA=$(echo "$CANVAS_CONFIGURATION" | jq -c -r '.custom_plugin_theme[] | select(.type == "plugin")')
+
+		if [ -n "$PLUGIN_DATA" ]; then
+
+			while IFS= read -r PLUGIN; do
+					PLUGIN_URL=$(echo "$PLUGIN" | jq -r '.url')
+					PLUGIN_NAME=$(basename "${PLUGIN_URL}" .zip)
+					PLUGIN_ACTIVE=$(echo "$PLUGIN" | jq -r '.active')
+
+					echo "Installing WordPress custom plugin: ${PLUGIN_NAME}"
+
+					wget -q -P ${VH_DOC_ROOT}/wp-content/plugins/ ${PLUGIN_URL}
+
+					if [ $? -eq 0 ]; then
+
+						ck_unzip
+						unzip -qq -o ${VH_DOC_ROOT}/wp-content/plugins/${PLUGIN_NAME}.zip -d ${VH_DOC_ROOT}/wp-content/plugins/
+
+						if [ "$PLUGIN_ACTIVE" == "true" ]; then
+								activate_wp_plugin "${PLUGIN_NAME}"
+						fi
+						
+						echo "WordPress custom plugin ${PLUGIN_NAME} installed."
+					else
+						echo "${PLUGIN_URL} FAILED to download"
+					fi
+
+			done <<< "$PLUGIN_DATA"
+		fi
+	fi
+
+	rm -f ${VH_DOC_ROOT}/wp-content/plugins/*.zip
+}
 
 main(){
 	if [ "${APP_NAME}" = 'wordpress' ] || [ "${APP_NAME}" = 'wp' ]; then
@@ -736,10 +956,17 @@ main(){
 			check_sql_native
 			app_wordpress_dl
 			preinstall_wordpress
+			apply_canvas_configuration_wordpress
 			install_wp_plugin
+			install_wp_plugins_from_canvas
+			install_wp_custom_plugins_from_canvas
+			install_themes_from_canvas
+			install_custom_themes_from_canvas
 			set_htaccess
 			get_theme_name
 			set_lscache
+			set_predefined_settings
+			set_permalink_structure
 			change_owner
 			exit 0
 	elif [ "${APP_NAME}" = 'empty' ] || [ "${APP_NAME}" = 'mt' ]; then
