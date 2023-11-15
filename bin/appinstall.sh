@@ -101,7 +101,7 @@ while [ ! -z "${1}" ]; do
             check_input "${1}"
             APP_URL="${1}"
             ;;
-        -canvas_configuration | --canvas_configuration) shift
+        -canvas-configuration | --canvas-configuration) shift
             CANVAS_CONFIGURATION="${1}"
             ;;
         *) 

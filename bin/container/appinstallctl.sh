@@ -948,6 +948,11 @@ install_wp_custom_plugins_from_canvas() {
 	rm -f ${VH_DOC_ROOT}/wp-content/plugins/*.zip
 }
 
+activate_wp_plugin() {
+    PLUGIN_NAME=$1
+    wp plugin activate ${PLUGIN_NAME} --allow-root --quiet
+}
+
 main(){
 	if [ "${APP_NAME}" = 'wordpress' ] || [ "${APP_NAME}" = 'wp' ]; then
 		set_vh_docroot ${DOMAIN}
@@ -1008,7 +1013,10 @@ while [ ! -z "${1}" ]; do
 			;;	
 		-client-app-install-url | --client-app-install-url) shift
 			CLIENT_APP_INSTALLATION_URL="${1}"
-		;;       
+			;;
+		-canvas-configuration | --canvas-configuration) shift
+			CANVAS_CONFIGURATION="${1}"
+			;;
 		*) 
 			help_message
 			;;              
