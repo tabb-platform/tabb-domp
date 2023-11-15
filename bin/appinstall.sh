@@ -50,7 +50,7 @@ main(){
          --write-out '%{http_code}' \
          http://${DOMAIN}/wp-admin/install.php?step=2)
     echo "Status $status_code"
-    if [[ "$status_code" -ne 200 ]]
+    if [[ "$status_code" -ne 200 ]];
     then
       echo "Set up failed, you need to set up manually via your domain"
     else
