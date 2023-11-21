@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+
+set -x -e
+
 APP_NAME=''
 DOMAIN=''
 EPACE='        '
@@ -32,29 +35,31 @@ check_input(){
 }
 
 app_download(){
-    docker compose exec litespeed su -c "appinstallctl.sh --app ${1} --domain ${2} --canvas-configuration '${3}'"
+    echo "title $4"
+    echo "username $5"
+    docker compose exec litespeed su -c "appinstallctl.sh --app '${1}' --domain '${2}' --canvas-configuration '${3}' --title '${4}' --username '${5}' --password '${6}' --email '${7}'" 
     bash bin/webadmin.sh -r
     exit 0
 }
 
 main(){
   if [ "${APP_NAME}" = 'wordpress' ] || [ "${APP_NAME}" = 'wp' ]; then
-    app_download ${APP_NAME} ${DOMAIN} ${CANVAS_CONFIGURATION} ${TITLE} ${USERNAME} ${PASSWORD} ${EMAIL}
-    status_code=$(curl --data-urlencode "weblog_title=${TITLE}" \
-         --data-urlencode "user_name=${USERNAME}" \
-         --data-urlencode "admin_password=${PASSWORD}" \
-         --data-urlencode "admin_password2=${PASSWORD}" \
-         --data-urlencode "admin_email=${EMAIL}" \
-         --data-urlencode "Submit=Install+WordPress" \
-         --silent \
-         --write-out '%{http_code}' \
-         http://${DOMAIN}/wp-admin/install.php?step=2)
-    echo "Status $status_code"
-    if [[ "$status_code" -ne 200 ]]; then
-      echo "Set up failed, you need to set up manually via your domain"
-    else
-      echo "Set up full-configured wordpress successfully"
-    fi
+    app_download ${APP_NAME} ${DOMAIN} "${CANVAS_CONFIGURATION}" "${TITLE}" ${USERNAME} ${PASSWORD} ${EMAIL}
+    # status_code=$(curl --data-urlencode "weblog_title=${TITLE}" \
+    #      --data-urlencode "user_name=${USERNAME}" \
+    #      --data-urlencode "admin_password=${PASSWORD}" \
+    #      --data-urlencode "admin_password2=${PASSWORD}" \
+    #      --data-urlencode "admin_email=${EMAIL}" \
+    #      --data-urlencode "Submit=Install+WordPress" \
+    #      --silent \
+    #      http://${DOMAIN}/wp-admin/install.php?step=2)
+
+    # echo "Status $status_code"
+    # if [[ "$status_code" -ne 200 ]]; then
+    #   echo "Set up failed, you need to set up manually via your domain"
+    # else
+    #   echo "Set up full-configured wordpress successfully"
+    # fi
   fi
   if [ "${APP_NAME}" = 'empty' ] || [ "${APP_NAME}" = 'mt' ]; then
     app_download ${APP_NAME} ${DOMAIN}
