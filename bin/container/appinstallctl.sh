@@ -97,7 +97,7 @@ set_vh_docroot(){
 	else
 	    echo "${DEFAULT_VH_ROOT}/${1}/html does not exist, please add domain first! Abort!"
 		exit 1
-	fi	
+	fi
 }
 
 check_sql_native(){
@@ -117,16 +117,16 @@ check_sql_native(){
 }
 
 install_wp_plugin(){
-    for PLUGIN in ${PLUGINLIST}; do
-        wget -q -P ${VH_DOC_ROOT}/wp-content/plugins/ https://downloads.wordpress.org/plugin/${PLUGIN}
-        if [ ${?} = 0 ]; then
-		    ck_unzip
-            unzip -qq -o ${VH_DOC_ROOT}/wp-content/plugins/${PLUGIN} -d ${VH_DOC_ROOT}/wp-content/plugins/
-        else
-            echo "${PLUGINLIST} FAILED to download"
-        fi
-    done
-    rm -f ${VH_DOC_ROOT}/wp-content/plugins/*.zip
+	for PLUGIN in ${PLUGINLIST}; do
+			wget -q -P ${VH_DOC_ROOT}/wp-content/plugins/ https://downloads.wordpress.org/plugin/${PLUGIN}
+			if [ ${?} = 0 ]; then
+			ck_unzip
+					unzip -qq -o ${VH_DOC_ROOT}/wp-content/plugins/${PLUGIN} -d ${VH_DOC_ROOT}/wp-content/plugins/
+			else
+					echo "${PLUGINLIST} FAILED to download"
+			fi
+	done
+	rm -f ${VH_DOC_ROOT}/wp-content/plugins/*.zip
 }
 
 set_htaccess(){
@@ -740,9 +740,9 @@ apply_canvas_configuration_wordpress() {
         delete_default_themes
     fi
 
-    # if [ "$uninstall_default_plugins" == true ]; then
-    #     uninstall_default_plugins
-    # fi
+    if [ "$uninstall_default_plugins" == true ]; then
+        uninstall_default_plugins
+    fi
 
     if [ "$remove_installation_files" == true ]; then
         remove_installation_files
@@ -773,8 +773,8 @@ delete_default_themes() {
 
 uninstall_default_plugins() {
     echo 'Uninstalling all default plugins...'
-    wp plugin delete akismet --allow-root
-    wp plugin delete hello --allow-root
+		rm -f ${VH_DOC_ROOT}/wp-content/plugins/hello.php
+		rm -rf ${VH_DOC_ROOT}/wp-content/plugins/akismet
     echo 'All default plugins uninstalled.'
 }
 
@@ -868,11 +868,11 @@ install_custom_themes_from_canvas() {
         if [ -n "$THEMES_DATA" ]; then
             for THEME in $THEMES_DATA; do
                 THEME_URL=$(echo $THEME | jq -r '.url')
-                THEME_FILE_NAME=$(basename "${THEME_URL}")
+                THEME_FILE_NAME=$(basename "$(echo "${THEME_URL}" | sed 's/\?.*//')")
 								PLUGIN_LABEL=$(echo "$THEME" | jq -r '.label')
                 THEME_ACTIVE=$(echo $THEME | jq -r '.active')
 
-								wget -q -P ${VH_DOC_ROOT}/wp-content/themes/ ${THEME_URL}
+								wget -q -P ${VH_DOC_ROOT}/wp-content/themes/${THEME_FILE_NAME} ${THEME_URL}
 
                 if [ "$THEME_ACTIVE" == "true" ]; then
                     wp theme install ${VH_DOC_ROOT}/wp-content/themes/${THEME_FILE_NAME} --allow-root --quiet --activate
@@ -947,13 +947,13 @@ install_wp_custom_plugins_from_canvas() {
 
 			while IFS= read -r PLUGIN; do
 					PLUGIN_URL=$(echo "$PLUGIN" | jq -r '.url')
-					PLUGIN_NAME=$(basename "${PLUGIN_URL}" .zip)
+					PLUGIN_NAME=$(basename "$(echo "${PLUGIN_URL}" | sed 's/\?.*//')" .zip)
 					PLUGIN_LABEL=$(echo "$PLUGIN" | jq -r '.label')
 					PLUGIN_ACTIVE=$(echo "$PLUGIN" | jq -r '.active')
 
 					echo "Installing WordPress custom plugin: ${PLUGIN_LABEL}"
 
-					wget -q -P ${VH_DOC_ROOT}/wp-content/plugins/ ${PLUGIN_URL}
+					wget -q -P ${VH_DOC_ROOT}/wp-content/plugins/${PLUGIN_NAME}.zip ${PLUGIN_URL}
 
 					if	 [ $? -eq 0 ]; then
 
