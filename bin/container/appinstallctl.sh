@@ -617,7 +617,7 @@ app_wordpress_dl(){
 
 app_wordpress_auto_config() {
 	if [ -f "${VH_DOC_ROOT}/wp-config.php" ] || [ -f "${VH_DOC_ROOT}/wp-config-sample.php" ]; then
-		wp core install --url=${DOMAIN} --title="${TITLE}" --admin_user=${USERNAME} --admin_password=${PASSWORD} --admin_email=${EMAIL}
+		wp core install --url=${DOMAIN} --title="${TITLE}" --admin_user=${USERNAME} --admin_password=${PASSWORD} --admin_email=${EMAIL} --allow-root
 	else
 		echo "wp-config.php do not exist."
 		exit 1
@@ -761,13 +761,13 @@ remove_hello_world_post() {
 
 remove_sample_page() {
     echo 'Removing "Sample Page"...'
-    wp post delete $(wp post list --post_type=page --posts_per_page=1 --field=ID --format=ids --title="Sample Page") --force --allow-root
+    wp post delete $(wp post list --post_type=page --posts_per_page=1 --field=ID --format=ids --title="Sample Page" --allow-root) --force --allow-root
     echo 'Sample Page removed.'
 }
 
 delete_default_themes() {
     echo 'Deleting all default themes...'
-		wp theme delete --all --force
+		wp theme delete --all --force --allow-root
     echo 'All default themes removed.'
 }
 
@@ -820,7 +820,16 @@ set_permalink_structure() {
 	if [ -z "$CANVAS_CONFIGURATION" ]; then
 			return
 	fi
-	PERMALINK_STRUCTURE=$(echo $CANVAS_CONFIGURATION | jq -e -r '.predefined_settings.date_format')
+	PERMALINK_STRUCTURE=$(echo $CANVAS_CONFIGURATION | jq -e -r '.permalink.selected')
+
+	if [ $PERMALINK_STRUCTURE == "custom" ]; then
+			PERMALINK_STRUCTURE=$(echo $CANVAS_CONFIGURATION | jq -e -r '.permalink.custom_config')
+	fi
+
+	if [ $PERMALINK_STRUCTURE == "plain" ]; then
+			PERMALINK_STRUCTURE=""
+	fi
+
 	echo "Setting permalink structure to: ${PERMALINK_STRUCTURE}"
 	wp option update permalink_structure "${PERMALINK_STRUCTURE}" --allow-root
 	echo "Permalink structure set to: ${PERMALINK_STRUCTURE}"
@@ -872,7 +881,7 @@ install_custom_themes_from_canvas() {
 								PLUGIN_LABEL=$(echo "$THEME" | jq -r '.label')
                 THEME_ACTIVE=$(echo $THEME | jq -r '.active')
 
-								wget -q -P ${VH_DOC_ROOT}/wp-content/themes/${THEME_FILE_NAME} ${THEME_URL}
+								curl -o ${VH_DOC_ROOT}/wp-content/themes/${THEME_FILE_NAME} ${THEME_URL}
 
                 if [ "$THEME_ACTIVE" == "true" ]; then
                     wp theme install ${VH_DOC_ROOT}/wp-content/themes/${THEME_FILE_NAME} --allow-root --quiet --activate
@@ -947,18 +956,19 @@ install_wp_custom_plugins_from_canvas() {
 
 			while IFS= read -r PLUGIN; do
 					PLUGIN_URL=$(echo "$PLUGIN" | jq -r '.url')
-					PLUGIN_NAME=$(basename "$(echo "${PLUGIN_URL}" | sed 's/\?.*//')" .zip)
+					PLUGIN_NAME=$(basename "$(echo "${PLUGIN_URL}" | sed 's/\?.*//')")
+					PLUGIN_FILE_NAME=$(basename "${PLUGIN_URL}")
 					PLUGIN_LABEL=$(echo "$PLUGIN" | jq -r '.label')
 					PLUGIN_ACTIVE=$(echo "$PLUGIN" | jq -r '.active')
 
 					echo "Installing WordPress custom plugin: ${PLUGIN_LABEL}"
 
-					wget -q -P ${VH_DOC_ROOT}/wp-content/plugins/${PLUGIN_NAME}.zip ${PLUGIN_URL}
+					curl -o ${VH_DOC_ROOT}/wp-content/plugins/${PLUGIN_NAME} ${PLUGIN_URL}
 
 					if	 [ $? -eq 0 ]; then
 
 						ck_unzip
-						unzip -qq -o ${VH_DOC_ROOT}/wp-content/plugins/${PLUGIN_NAME}.zip -d ${VH_DOC_ROOT}/wp-content/plugins/
+						unzip -qq -o ${VH_DOC_ROOT}/wp-content/plugins/${PLUGIN_NAME} -d ${VH_DOC_ROOT}/wp-content/plugins/
 
 						if [ "$PLUGIN_ACTIVE" == "true" ]; then
 								activate_wp_plugin "${PLUGIN_LABEL}"
