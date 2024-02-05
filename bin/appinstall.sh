@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -x -e
+set -x
 
 APP_NAME=''
 DOMAIN=''
