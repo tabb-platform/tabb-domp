@@ -35,8 +35,6 @@ check_input(){
 }
 
 app_download(){
-    echo "title $4"
-    echo "username $5"
     docker compose exec litespeed su -c "appinstallctl.sh --app '${1}' --domain '${2}' --canvas-configuration '${3}' --title '${4}' --username '${5}' --password '${6}' --email '${7}'" 
     bash bin/webadmin.sh -r
     exit 0
