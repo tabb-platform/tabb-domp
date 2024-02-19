@@ -1,6 +1,7 @@
 #!/bin/bash
 
-set -x -e
+set -x
+
 DEFAULT_VH_ROOT='/var/www/vhosts'
 VH_DOC_ROOT=''
 VHNAME=''
@@ -844,7 +845,7 @@ install_themes_from_canvas() {
         THEMES_DATA=$(echo "$CANVAS_CONFIGURATION" | jq -c -r '.themes[]')
 
         if [ -n "$THEMES_DATA" ]; then
-            for THEME in $THEMES_DATA; do
+            while IFS= read -r THEME; do
                 THEME_NAME=$(echo "$THEME" | jq -r '.name')
                 THEME_ACTIVE=$(echo "$THEME" | jq -r '.active')
 
@@ -875,10 +876,10 @@ install_custom_themes_from_canvas() {
         THEMES_DATA=$(echo "$CANVAS_CONFIGURATION" | jq -c -r '.custom_plugin_theme[] | select(.type == "theme")')
 
         if [ -n "$THEMES_DATA" ]; then
-            for THEME in $THEMES_DATA; do
+            while IFS= read -r THEME; do
                 THEME_URL=$(echo $THEME | jq -r '.url')
                 THEME_FILE_NAME=$(basename "$(echo "${THEME_URL}" | sed 's/\?.*//')")
-								PLUGIN_LABEL=$(echo "$THEME" | jq -r '.label')
+								THEME_LABEL=$(echo "$THEME" | jq -r '.label')
                 THEME_ACTIVE=$(echo $THEME | jq -r '.active')
 
 								curl -o ${VH_DOC_ROOT}/wp-content/themes/${THEME_FILE_NAME} ${THEME_URL}
@@ -890,9 +891,9 @@ install_custom_themes_from_canvas() {
                 fi
 
                 if [ $? -eq 0 ]; then
-                    echo "WordPress theme ${PLUGIN_LABEL} installed successfully."
+                    echo "WordPress theme ${THEME_LABEL} installed successfully."
                 else
-                    echo "Failed to install WordPress theme ${PLUGIN_LABEL}."
+                    echo "Failed to install WordPress theme ${THEME_LABEL}."
                 fi
             done
         fi
