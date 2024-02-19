@@ -14,6 +14,9 @@ FORCE=''
 REVOKE=''
 REMOVE=''
 ALL_DOMAINS=''
+LOMP_CERT_FOLDER='/usr/local/tabb/lomp/acme/certs'
+
+set -x
 
 echow(){
     FLAG=${1}
@@ -175,10 +178,26 @@ doc_root_verify(){
     fi
 }
 
+convert_ssl_acme_folder_to_vhnae_folder(){
+    
+    hook_d=$(echo $ALL_DOMAINS | tr ' ' '\n' | grep -v '^-d' | head -1)
+    ssl_acme_folder="${LOMP_CERT_FOLDER}/$hook_d"_ecc
+    ssl_vh_folder="${LOMP_CERT_FOLDER}/$1"_ecc
+
+    if [ -d $ssl_vh_folder ]; then
+        mv $ssl_acme_folder/* $ssl_vh_folder
+    else
+        mv $ssl_acme_folder $ssl_vh_folder
+    fi
+
+    cp $ssl_vh_folder/$hook_d.key $ssl_vh_folder/$1.key
+}
+
 install_cert(){
     echo '[Start] Apply Lets Encrypt Certificate'
     if [ ${TYPE} = 1 ]; then
-        docker compose exec ${CONT_NAME} su -c "/root/.acme.sh/acme.sh --issue -d ${1} ${ALL_DOMAINS} -w ${DOC_PATH}"
+        docker-compose exec -T ${CONT_NAME} su -c "/root/.acme.sh/acme.sh --issue ${ALL_DOMAINS} -w ${DOC_PATH} --force"
+        convert_ssl_acme_folder_to_vhnae_folder $1
     elif [ ${TYPE} = 2 ]; then
         docker compose exec ${CONT_NAME} su -c "/root/.acme.sh/acme.sh --issue -d ${1} -d www.${1} ${ALL_DOMAINS} -w ${DOC_PATH}"
     else
