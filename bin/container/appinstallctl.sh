@@ -842,16 +842,14 @@ install_themes_from_canvas() {
     fi
 
     if [ "$(echo "$CANVAS_CONFIGURATION" | jq -e '.themes | length > 0')" == true ]; then
-        THEMES_DATA=$(echo "$CANVAS_CONFIGURATION" | jq -c '.themes[]')
+        THEMES_DATA=$(echo "$CANVAS_CONFIGURATION" | jq -c '.themes[] | del(.name)')
 
         if [ -n "$THEMES_DATA" ]; then
            	for THEME in $THEMES_DATA; do
 								THEME_URL=$(echo $THEME | jq -r .url)
-                THEME_FILE_NAME=$(basename "${THEME_URL}")
-								THEME_NAME=$(echo $THEME | jq -r .name)
                 THEME_ACTIVE=$(echo "$THEME" | jq -r '.active')
 
-                echo "Installing WordPress theme: ${THEME_NAME}"
+                echo "Installing WordPress theme: ${THEME_URL}"
 
                 if [ "$THEME_ACTIVE" == "true" ]; then
                     wp theme install $THEME_URL --allow-root --quiet --activate
@@ -860,9 +858,9 @@ install_themes_from_canvas() {
                 fi
 
                 if [ $? -eq 0 ]; then
-                    echo "WordPress theme ${THEME_NAME} installed successfully."
+                    echo "WordPress theme ${THEME_URL} installed successfully."
                 else
-                    echo "Failed to install WordPress theme ${THEME_NAME}."
+                    echo "Failed to install WordPress theme ${THEME_URL}."
                 fi
             done
         fi
@@ -875,13 +873,11 @@ install_custom_themes_from_canvas() {
     fi
 
     if [ "$(echo "$CANVAS_CONFIGURATION" | jq -e '.themes | length > 0')" == true ]; then
-        THEMES_DATA=$(echo "$CANVAS_CONFIGURATION" | jq -r '.custom_plugin_theme[] | select(.type == "theme")')
+        THEMES_DATA=$(echo "$CANVAS_CONFIGURATION" | jq -r '.custom_plugin_theme[] | select(.type == "theme") | del(.label)')
 
         if [ -n "$THEMES_DATA" ]; then
             for THEME in $THEMES_DATA; do
-                THEME_URL=$(echo $THEME | jq -c .url)
-                THEME_FILE_NAME=$(basename "$(echo "${THEME_URL}" | sed 's/\?.*//')")
-								THEME_LABEL=$(echo "$THEME" | jq -r '.label')
+                THEME_URL=$(echo $THEME | jq -r .url)
                 THEME_ACTIVE=$(echo $THEME | jq -r '.active')
 
                 if [ "$THEME_ACTIVE" == "true" ]; then
@@ -891,9 +887,9 @@ install_custom_themes_from_canvas() {
                 fi
 
                 if [ $? -eq 0 ]; then
-                    echo "WordPress theme ${THEME_LABEL} installed successfully."
+                    echo "WordPress theme ${THEME_URL} installed successfully."
                 else
-                    echo "Failed to install WordPress theme ${THEME_LABEL}."
+                    echo "Failed to install WordPress theme ${THEME_URL}."
                 fi
             done
         fi
@@ -907,18 +903,15 @@ install_wp_plugins_from_canvas() {
 
 	if [ $(echo "$CANVAS_CONFIGURATION" | jq -e '.plugins | length > 0') == true ]; then
 
-		PLUGIN_DATA=$(echo "$CANVAS_CONFIGURATION" | jq -c '.plugins[]')
+		PLUGIN_DATA=$(echo "$CANVAS_CONFIGURATION" | jq -c '.plugins[] | del(.name)')
 
 		if [ -n "$PLUGIN_DATA" ]; then
 
 			for PLUGIN in $PLUGIN_DATA; do
 					PLUGIN_URL=$(echo "$PLUGIN" | jq -r .url)
-					PLUGIN_FILE_NAME=$(basename "${PLUGIN_URL}" .zip)
-					PLUGIN_NAME=$(echo "$PLUGIN" | jq -r '.name')
-					PLUGIN_SLUG=$(basename "$(basename "$PLUGIN_URL" .zip)" | sed 's/[0-9]\+\.[0-9]\+\.[0-9]\+//; s/\./ /g')
 					PLUGIN_ACTIVE=$(echo "$PLUGIN" | jq -r '.active')
 
-					echo "Installing WordPress plugin: ${PLUGIN_NAME}"
+					echo "Installing WordPress plugin: ${PLUGIN_URL}"
 
 					if [ "$PLUGIN_ACTIVE" == "true" ]; then
 							wp plugin install $PLUGIN_URL --allow-root --quiet --activate
@@ -927,9 +920,9 @@ install_wp_plugins_from_canvas() {
 					fi
 
 					if [ $? -eq 0 ]; then
-							echo "WordPress plugin ${PLUGIN_NAME} installed successfully."
+							echo "WordPress plugin ${PLUGIN_URL} installed successfully."
 					else
-							echo "Failed to install WordPress plugin ${PLUGIN_NAME}."
+							echo "Failed to install WordPress plugin ${PLUGIN_URL}."
 					fi
 
 			done <<< "$PLUGIN_DATA"
@@ -947,17 +940,15 @@ install_wp_custom_plugins_from_canvas() {
 
 	if [ $(echo "$CANVAS_CONFIGURATION" | jq -e '.plugins | length > 0') == true ]; then
 
-		PLUGIN_DATA=$(echo "$CANVAS_CONFIGURATION" | jq -c -r '.custom_plugin_theme[] | select(.type == "plugin")')
+		PLUGIN_DATA=$(echo "$CANVAS_CONFIGURATION" | jq -c -r '.custom_plugin_theme[] | select(.type == "plugin") | del(.label)')
 
 		if [ -n "$PLUGIN_DATA" ]; then
 
 			for PLUGIN in $PLUGIN_DATA; do
 					PLUGIN_URL=$(echo "$PLUGIN" | jq -r '.url')
-					PLUGIN_FILE_NAME=$(basename "${PLUGIN_URL}")
-					PLUGIN_LABEL=$(echo "$PLUGIN" | jq -r '.label')
 					PLUGIN_ACTIVE=$(echo "$PLUGIN" | jq -r '.active')
 
-					echo "Installing WordPress custom plugin: ${PLUGIN_LABEL}"
+					echo "Installing WordPress custom plugin: ${PLUGIN_URL}"
 
 					if [ "$PLUGIN_ACTIVE" == "true" ]; then
 							wp plugin install $PLUGIN_URL --allow-root --quiet --activate
@@ -966,9 +957,9 @@ install_wp_custom_plugins_from_canvas() {
 					fi
 
 					if [ $? -eq 0 ]; then
-							echo "WordPress plugin ${PLUGIN_LABEL} installed successfully."
+							echo "WordPress plugin ${PLUGIN_URL} installed successfully."
 					else
-							echo "Failed to install WordPress plugin ${PLUGIN_LABEL}."
+							echo "Failed to install WordPress plugin ${PLUGIN_URL}."
 					fi
 
 
