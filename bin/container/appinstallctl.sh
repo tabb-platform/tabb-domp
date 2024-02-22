@@ -852,9 +852,9 @@ install_themes_from_canvas() {
                 echo "Installing WordPress theme: ${THEME_URL}"
 
                 if [ "$THEME_ACTIVE" == "true" ]; then
-                    wp theme install $THEME_URL --allow-root --quiet --activate
+                    wp theme install $THEME_URL --allow-root --force --activate 
                 else
-                    wp theme install $THEME_URL --allow-root --quiet
+                    wp theme install $THEME_URL --allow-root --force
                 fi
 
                 if [ $? -eq 0 ]; then
@@ -881,9 +881,9 @@ install_custom_themes_from_canvas() {
                 THEME_ACTIVE=$(echo $THEME | jq -r '.active')
 
                 if [ "$THEME_ACTIVE" == "true" ]; then
-                    wp theme install $THEME_URL --allow-root --quiet --activate
+                    wp theme install $THEME_URL --allow-root --force --activate
                 else
-                    wp theme install $THEME_URL --allow-root --quiet
+                    wp theme install $THEME_URL --allow-root --force
                 fi
 
                 if [ $? -eq 0 ]; then
@@ -914,9 +914,9 @@ install_wp_plugins_from_canvas() {
 					echo "Installing WordPress plugin: ${PLUGIN_URL}"
 
 					if [ "$PLUGIN_ACTIVE" == "true" ]; then
-							wp plugin install $PLUGIN_URL --allow-root --quiet --activate
+							wp plugin install $PLUGIN_URL --allow-root --force --activate
 					else
-							wp plugin install $PLUGIN_URL --allow-root --quiet
+							wp plugin install $PLUGIN_URL --allow-root --force
 					fi
 
 					if [ $? -eq 0 ]; then
@@ -949,9 +949,9 @@ install_wp_custom_plugins_from_canvas() {
 					echo "Installing WordPress custom plugin: ${PLUGIN_URL}"
 
 					if [ "$PLUGIN_ACTIVE" == "true" ]; then
-							wp plugin install $PLUGIN_URL --allow-root --quiet --activate
+							wp plugin install $PLUGIN_URL --allow-root --force --activate
 					else
-							wp plugin install $PLUGIN_URL --allow-root --quiet
+							wp plugin install $PLUGIN_URL --allow-root --force
 					fi
 
 					if [ $? -eq 0 ]; then
