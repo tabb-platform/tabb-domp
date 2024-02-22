@@ -872,8 +872,8 @@ install_custom_themes_from_canvas() {
         return
     fi
 
-    if [ "$(echo "$CANVAS_CONFIGURATION" | jq -e '.custom_plugin_theme[] | length > 0')" == true ]; then
-        THEMES_DATA=$(echo "$CANVAS_CONFIGURATION" | jq -r '.custom_plugin_theme[] | select(.type == "theme") | del(.label)')
+    if [ "$(echo "$CANVAS_CONFIGURATION" | jq -e '.custom_plugin_theme | length > 0')" == true ]; then
+        THEMES_DATA=$(echo "$CANVAS_CONFIGURATION" | jq -c '.custom_plugin_theme[] | select(.type == "theme") | del(.label)')
 
         if [ -n "$THEMES_DATA" ]; then
             for THEME in $THEMES_DATA; do
@@ -936,14 +936,14 @@ install_wp_custom_plugins_from_canvas() {
 			return
 	fi
 
-	if [ $(echo "$CANVAS_CONFIGURATION" | jq -e '.custom_plugin_theme[] | length > 0') == true ]; then
+	if [ $(echo "$CANVAS_CONFIGURATION" | jq -e '.custom_plugin_theme | length > 0') == true ]; then
 
-		PLUGIN_DATA=$(echo "$CANVAS_CONFIGURATION" | jq -c -r '.custom_plugin_theme[] | select(.type == "plugin") | del(.label)')
+		PLUGIN_DATA=$(echo "$CANVAS_CONFIGURATION" | jq -c '.custom_plugin_theme[] | select(.type == "plugin") | del(.label)')
 
 		if [ -n "$PLUGIN_DATA" ]; then
 
 			for PLUGIN in $PLUGIN_DATA; do
-					PLUGIN_URL=$(echo "$PLUGIN" | jq -r '.url')
+					PLUGIN_URL=$(echo "$PLUGIN" | jq -r .url)
 					PLUGIN_ACTIVE=$(echo "$PLUGIN" | jq -r '.active')
 
 					echo "Installing WordPress custom plugin: ${PLUGIN_URL}"
