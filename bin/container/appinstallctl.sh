@@ -872,7 +872,7 @@ install_custom_themes_from_canvas() {
         return
     fi
 
-    if [ "$(echo "$CANVAS_CONFIGURATION" | jq -e '.themes | length > 0')" == true ]; then
+    if [ "$(echo "$CANVAS_CONFIGURATION" | jq -e '.custom_plugin_theme[] | length > 0')" == true ]; then
         THEMES_DATA=$(echo "$CANVAS_CONFIGURATION" | jq -r '.custom_plugin_theme[] | select(.type == "theme") | del(.label)')
 
         if [ -n "$THEMES_DATA" ]; then
@@ -928,8 +928,6 @@ install_wp_plugins_from_canvas() {
 			done <<< "$PLUGIN_DATA"
 		fi
 	fi
-
-	rm -f ${VH_DOC_ROOT}/wp-content/plugins/*.zip
 }
 
 
@@ -938,7 +936,7 @@ install_wp_custom_plugins_from_canvas() {
 			return
 	fi
 
-	if [ $(echo "$CANVAS_CONFIGURATION" | jq -e '.plugins | length > 0') == true ]; then
+	if [ $(echo "$CANVAS_CONFIGURATION" | jq -e '.custom_plugin_theme[] | length > 0') == true ]; then
 
 		PLUGIN_DATA=$(echo "$CANVAS_CONFIGURATION" | jq -c -r '.custom_plugin_theme[] | select(.type == "plugin") | del(.label)')
 
@@ -966,8 +964,6 @@ install_wp_custom_plugins_from_canvas() {
 			done <<< "$PLUGIN_DATA"
 		fi
 	fi
-
-	rm -f ${VH_DOC_ROOT}/wp-content/plugins/*.zip
 }
 
 activate_wp_plugin() {
